@@ -19,6 +19,24 @@ public class Product {
 
     private Date createDate;
 
+    private Category category;
+
+    private ProductImage firstProductImage;
+
+    public Category getCategory(){return category;}
+
+    public void setCategory(Category category){
+        this.category=category;
+    }
+
+    public ProductImage getFirstProductImage() {
+        return firstProductImage;
+    }
+
+    public void setFirstProductImage(ProductImage firstProductImage) {
+        this.firstProductImage = firstProductImage;
+    }
+
     public Integer getId() {
         return id;
     }
