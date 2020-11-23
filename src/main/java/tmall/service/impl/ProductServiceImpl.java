@@ -11,6 +11,8 @@ import tmall.service.CategoryService;
 import tmall.service.ProductImageService;
 import tmall.service.ProductService;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.List;
 
 @Service
@@ -60,18 +62,20 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<Product> list(int cid) {
+
         ProductExample example=new ProductExample();
         example.createCriteria().andCidEqualTo(cid);
         example.setOrderByClause("id desc");
         List<Product> result= productMapper.selectByExample(example);
         setCategory(result);
+        setFirstProductImage(result);
         return result;
     }
 
     @Override
     public void setFirstProductImage(Product p) {
         List<ProductImage> pis = productImageService.list(p.getId(), ProductImageService.type_single);
-        System.out.println("开始设置图片");
+
         if (!pis.isEmpty()) {
             ProductImage pi = pis.get(0);
             System.out.println(pi.getType());

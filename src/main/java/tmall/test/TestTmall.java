@@ -1,6 +1,8 @@
 package tmall.test;
 
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -23,13 +25,20 @@ public class TestTmall {
                 Statement s = c.createStatement();
         )
         {
-            for (int i = 1; i <=10 ; i++) {
+            for (int i = 1; i <=1 ; i++) {
                 String sqlFormat = "insert into category values (null, '测试分类%d')";
                 String sql = String.format(sqlFormat, i);
                 s.execute(sql);
             }
 
-            System.out.println("已经成功创建10条分类测试数据");
+            try {
+                System.setOut(new
+                        PrintStream("/Users/zeroring/Desktop/test/test.txt"));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("已经成功创建1条分类测试数据");
 
         } catch (SQLException e) {
             // TODO Auto-generated catch block

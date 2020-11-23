@@ -21,7 +21,11 @@
             return true;
         });
     });
+
+
 </script>
+
+
 
 <title>产品管理</title>
 
@@ -57,7 +61,7 @@
                 <tr>
                     <td>${p.id}</td>
                     <td>
-                        此处应有图片
+
                             <c:if test="${!empty p.firstProductImage}">
                             <img width="40px" src="img/productSingle/${p.firstProductImage.id}.jpg">
 
