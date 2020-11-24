@@ -13,6 +13,7 @@ import tmall.service.ProductService;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -80,6 +81,36 @@ public class ProductServiceImpl implements ProductService {
             ProductImage pi = pis.get(0);
             System.out.println(pi.getType());
             p.setFirstProductImage(pi);
+        }
+
+    }
+
+    @Override
+    public void fill(List<Category> cs) {
+        for(Category c:cs) {fill(c);}
+
+    }
+
+    @Override
+    public void fill(Category c) {
+        List<Product> ps=list(c.getId());
+        c.setProducts(ps);
+    }
+
+    @Override
+    public void fillByRow(List<Category> cs) { //为分类填充推荐产品集合
+        int ProductNumberEachRow=8;
+        for(Category c:cs){
+            List<Product> products=c.getProducts();
+            List<List<Product>> productsByRow=new ArrayList<>();
+            for(int i=0;i<products.size();i+=ProductNumberEachRow){
+                int size = i+ProductNumberEachRow;
+                size= size>products.size()?products.size():size;
+                List<Product> productsOfEachRow =products.subList(i, size);
+                productsByRow.add(productsOfEachRow);
+            }
+            c.setProductsByRow(productsByRow);
+
         }
 
     }

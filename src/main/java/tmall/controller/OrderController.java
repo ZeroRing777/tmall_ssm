@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import tmall.pojo.Order;
+import tmall.service.OrderItemService;
 import tmall.service.OrderService;
 import tmall.util.Page;
 
@@ -20,6 +21,9 @@ import java.util.List;
 public class OrderController {
 
     @Autowired
+    OrderItemService orderItemService;
+
+    @Autowired
     OrderService orderService;
 
     @RequestMapping("admin_order_list")
@@ -27,12 +31,9 @@ public class OrderController {
 
         PageHelper.offsetPage(page.getStart(),page.getCount());
         List<Order> os= orderService.list();
-
         int total = (int) new PageInfo<>(os).getTotal();
         page.setTotal(total);
-
-        //orderItemService.fill(os);
-
+        orderItemService.fill(os);
         model.addAttribute("os", os);
         model.addAttribute("page", page);
         return "admin/listOrder";
