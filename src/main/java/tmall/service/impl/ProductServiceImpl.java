@@ -7,9 +7,7 @@ import tmall.pojo.Category;
 import tmall.pojo.Product;
 import tmall.pojo.ProductExample;
 import tmall.pojo.ProductImage;
-import tmall.service.CategoryService;
-import tmall.service.ProductImageService;
-import tmall.service.ProductService;
+import tmall.service.*;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -27,6 +25,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     ProductImageService productImageService;
+
+    @Autowired
+    OrderItemService orderItemService;
+
+    @Autowired
+    ReviewService reviewService;
 
     @Override
     public void add(Product p) {
@@ -113,6 +117,22 @@ public class ProductServiceImpl implements ProductService {
 
         }
 
+    }
+
+    @Override
+    public void setSaleAndReviewNumber(Product p) {
+        int saleCount = orderItemService.getSaleCount(p.getId());
+        p.setSaleCount(saleCount);
+
+        int reviewCount = reviewService.getCount(p.getId());
+        p.setReviewCount(reviewCount);
+    }
+
+    @Override
+    public void setSaleAndReviewNumber(List<Product> ps) {
+        for (Product p : ps) {
+            setSaleAndReviewNumber(p);
+        }
     }
 
     public void setFirstProductImage(List<Product> ps) {
