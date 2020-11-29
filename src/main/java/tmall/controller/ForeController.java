@@ -1,16 +1,21 @@
 package tmall.controller;
 
 
+import com.github.pagehelper.PageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.util.HtmlUtils;
+import tmall.comparator.*;
 import tmall.pojo.*;
 import tmall.service.*;
 
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -99,5 +104,119 @@ public class ForeController {
 
         return "fore/product";
     }
+
+    @RequestMapping("forecheckLogin")
+    @ResponseBody
+    public String checkLogin(HttpSession session){
+        User user =(User)  session.getAttribute("user");
+        if(null!=user) return "success";
+        else return "fail";
+
+    }
+
+    @RequestMapping("foreloginAjax")
+    @ResponseBody
+    public String loginAjax(@RequestParam("name") String name, @RequestParam("password") String password,HttpSession session) {
+        name = HtmlUtils.htmlEscape(name);
+        User user = userService.get(name,password);
+
+        if(null==user){
+            return "fail";
+        }
+        session.setAttribute("user", user);
+        return "success";
+    }
+
+    @RequestMapping("forecategory")
+    public String category(int cid,String sort, Model model){
+        Category c = categoryService.get(cid);
+        productService.fill(c);
+        productService.setSaleAndReviewNumber(c.getProducts());
+        if(null!=sort){
+            switch(sort){
+                case "review":
+                    Collections.sort(c.getProducts(),new ProductReviewComparator());
+                    break;
+                case "date" :
+                    Collections.sort(c.getProducts(),new ProductDateComparator());
+                    break;
+
+                case "saleCount" :
+                    Collections.sort(c.getProducts(),new ProductSaleCountComparator());
+                    break;
+
+                case "price":
+                    Collections.sort(c.getProducts(),new ProductPriceComparator());
+                    break;
+
+                case "all":
+                    Collections.sort(c.getProducts(),new ProductAllComparator());
+                    break;
+            }
+        }
+        model.addAttribute("c", c);
+        return "fore/category";
+    }
+
+    @RequestMapping("foresearch")
+    public String search(String keyword,Model model){
+        PageHelper.offsetPage(0,20);
+        List<Product> ps= productService.search(keyword);
+        productService.setSaleAndReviewNumber(ps);
+        model.addAttribute("ps",ps);
+        return "fore/searchResult";
+    }
+
+    @RequestMapping("forebuyone")
+    public String buyone(int pid, int num, HttpSession session){
+
+        Product p=productService.get(pid);
+        int oiid=0;
+        User user=(User) session.getAttribute("user");
+        boolean found = false;
+        List<OrderItem> ois = orderItemService.listByUser(user.getId());
+        for(OrderItem oi:ois) {
+            if (oi.getProduct().getId().intValue() == p.getId().intValue()) {
+                oi.setNumber(oi.getNumber()+num);
+                orderItemService.update(oi);
+                found=true;
+                oiid=oi.getId();
+                break;
+            }
+        }
+
+        if(!found){
+            OrderItem oi=new OrderItem();
+            oi.setUid(user.getId());
+            oi.setNumber(num);
+            oi.setPid(pid);
+            orderItemService.add(oi);
+            oiid=oi.getId();
+        }
+
+        return "redirect:forebuy?oiid="+oiid;
+    }
+
+    @RequestMapping("forebuy")
+    public String buy(Model model, String[] oiid, HttpSession session){
+
+        List<OrderItem> ois=new ArrayList<>();
+        float total = 0;
+        for(String strid:oiid){
+            int id=Integer.parseInt(strid);
+            OrderItem oi=orderItemService.get(id);
+            Product p=oi.getProduct();
+            List<ProductImage> productSingleImages = productImageService.list(p.getId(), ProductImageService.type_single);
+            if(!productSingleImages.isEmpty()) p.setFirstProductImage(productSingleImages.get(0));
+            oi.setProduct(p);//设置第一张图片
+            total +=oi.getProduct().getPromotePrice()*oi.getNumber();
+            ois.add(oi);
+        }
+        session.setAttribute("ois", ois);
+        model.addAttribute("total", total);
+        return "fore/buy";
+
+    }
+
 
 }
