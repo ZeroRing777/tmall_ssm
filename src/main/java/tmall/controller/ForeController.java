@@ -204,17 +204,97 @@ public class ForeController {
         float total = 0;
         for(String strid:oiid){
             int id=Integer.parseInt(strid);
-            OrderItem oi=orderItemService.get(id);
-            Product p=oi.getProduct();
-            List<ProductImage> productSingleImages = productImageService.list(p.getId(), ProductImageService.type_single);
-            if(!productSingleImages.isEmpty()) p.setFirstProductImage(productSingleImages.get(0));
-            oi.setProduct(p);//设置第一张图片
-            total +=oi.getProduct().getPromotePrice()*oi.getNumber();
-            ois.add(oi);
+            if(null!=strid) {
+                OrderItem oi = orderItemService.get(id);
+                Product p = oi.getProduct();
+                List<ProductImage> productSingleImages = productImageService.list(p.getId(), ProductImageService.type_single);
+                if (!productSingleImages.isEmpty()) p.setFirstProductImage(productSingleImages.get(0));
+                oi.setProduct(p);//设置第一张图片
+                total += oi.getProduct().getPromotePrice() * oi.getNumber();
+                ois.add(oi);
+            }
         }
         session.setAttribute("ois", ois);
         model.addAttribute("total", total);
         return "fore/buy";
+
+    }
+
+    @RequestMapping("foreaddCart")
+    @ResponseBody
+    public String addCart(int pid,int num, Model model, HttpSession session){
+
+        Product p=productService.get(pid);
+
+        User user=(User)session.getAttribute("user");
+        boolean found=false;
+
+        List<OrderItem> ois=orderItemService.listByUser(user.getId());
+        for(OrderItem oi:ois){
+
+            if(oi.getProduct().getId().intValue()==p.getId().intValue()){
+                oi.setNumber(oi.getNumber()+num);
+                orderItemService.update(oi);
+                found = true;
+                break;
+            }
+        }
+
+        if(!found){
+            OrderItem oi=new OrderItem();
+            oi.setUid(user.getId());
+            oi.setNumber(num);
+            oi.setPid(pid);
+            orderItemService.add(oi);
+        }
+
+        return "success";
+
+    }
+
+    @RequestMapping("forecart")
+    public String cart(Model model, HttpSession session){
+
+        User user=(User)session.getAttribute("user");
+        List<OrderItem> ois = orderItemService.listByUser(user.getId());
+        for(OrderItem oi:ois){
+            Product p=oi.getProduct();
+            List<ProductImage> productSingleImages = productImageService.list(p.getId(), ProductImageService.type_single);
+            if(!productSingleImages.isEmpty()) p.setFirstProductImage(productSingleImages.get(0));
+            oi.setProduct(p);//设置第一张图片
+        }
+        model.addAttribute("ois", ois);
+        return "fore/cart";
+
+    }
+
+    @RequestMapping("forechangeOrderItem")
+    @ResponseBody
+    public String changeOrderItem(Model model, HttpSession session, int pid, int number){
+
+        User user =(User)  session.getAttribute("user");
+        if(null==user)
+            return "fail";
+        List<OrderItem> ois= orderItemService.listByUser(user.getId());
+        for(OrderItem oi:ois){
+
+            if(oi.getProduct().getId().intValue()==pid){
+                oi.setNumber(number);
+                orderItemService.update(oi);
+                break;
+            }
+        }
+        return "success";
+
+    }
+
+    @RequestMapping("foredeleteOrderItem")
+    @ResponseBody
+    public String deleteOrderItem(Model model,HttpSession session,int oiid){
+        User user =(User)  session.getAttribute("user");
+        if(null==user) return "fail";
+        orderItemService.delete(oiid);
+        return "success";
 
     }
 

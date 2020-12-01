@@ -12,12 +12,12 @@
             <button class="searchButton" type="submit">搜天猫</button>
             <div class="searchBelow">
             <c:forEach items="${cs}" var="c" varStatus="st">
-                <c:if test="${st.count>=8 and st.count<=11}">
+                <c:if test="${st.count>=8 and st.count<=10}">
                     <span>
                         <a href="forecategory?cid=${c.id}">
                                 ${c.name}
                         </a>
-                        <c:if test="${st.count!=11}">
+                        <c:if test="${st.count!=10}">
                             <span>|</span>
                         </c:if>
                     </span>
