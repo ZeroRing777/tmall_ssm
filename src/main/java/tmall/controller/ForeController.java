@@ -2,6 +2,7 @@ package tmall.controller;
 
 
 import com.github.pagehelper.PageHelper;
+import org.apache.commons.lang.math.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,8 +15,10 @@ import tmall.pojo.*;
 import tmall.service.*;
 
 import javax.servlet.http.HttpSession;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 @Controller
@@ -297,6 +300,48 @@ public class ForeController {
         return "success";
 
     }
+
+    @RequestMapping("forecreateOrder")
+    public String createOrder(Model model, Order order, HttpSession session){
+        User user =(User)  session.getAttribute("user");
+        String orderCode = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date()) + RandomUtils.nextInt(10000);
+        order.setOrderCode(orderCode);
+        order.setCreateDate(new Date());
+        order.setUid(user.getId());
+        order.setStatus(orderService.waitPay);
+        List<OrderItem> ois=(List<OrderItem>)session.getAttribute("ois");
+        float total =orderService.add(order,ois);
+        return "redirect:forealipay?oid="+order.getId() +"&total="+total;
+    }
+
+    @RequestMapping("forepayed")
+    public String payed(int oid,float total, Model model){
+        Order order=orderService.get(oid);
+        order.setStatus(orderService.waitDelivery);
+        order.setPayDate(new Date());
+        orderService.update(order);
+        model.addAttribute("o",order);
+        return "fore/payed";
+    }
+
+    @RequestMapping("forebought")
+    public String bought(Model model, HttpSession session){
+
+        User user =(User)  session.getAttribute("user");
+        List<Order> os= orderService.list(user.getId(),OrderService.delete);
+        orderItemService.fill(os);
+        model.addAttribute("os", os);
+        return "fore/bought";
+    }
+
+    @RequestMapping("foreconfirmPay")
+    public String confirmPay(Model model,int oid){
+        Order o= orderService.get(oid);
+        orderItemService.fill(o);
+        model.addAttribute("o", o);
+        return "fore/confirmPay";
+    }
+
 
 
 }

@@ -3,11 +3,9 @@ package tmall.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tmall.mapper.OrderItemMapper;
-import tmall.pojo.Order;
-import tmall.pojo.OrderItem;
-import tmall.pojo.OrderItemExample;
-import tmall.pojo.Product;
+import tmall.pojo.*;
 import tmall.service.OrderItemService;
+import tmall.service.ProductImageService;
 import tmall.service.ProductService;
 
 import java.util.List;
@@ -20,6 +18,9 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     @Autowired
     ProductService productService;
+
+    @Autowired
+    ProductImageService productImageService;
 
     @Override
     public void add(OrderItem oi) {
@@ -46,7 +47,10 @@ public class OrderItemServiceImpl implements OrderItemService {
     private void setProduct(OrderItem oi){
 
         Product p=productService.get(oi.getPid());
-        oi.setProduct(p);
+        List<ProductImage> productSingleImages = productImageService.list(p.getId(), ProductImageService.type_single);
+        if (!productSingleImages.isEmpty()) p.setFirstProductImage(productSingleImages.get(0));
+        oi.setProduct(p);//设置第一张图片
+
     }
 
     public void setProduct(List<OrderItem> ois){
@@ -83,6 +87,7 @@ public class OrderItemServiceImpl implements OrderItemService {
         for (OrderItem oi : ois) {
             total+=oi.getNumber()*oi.getProduct().getPromotePrice();
             totalNumber+=oi.getNumber();
+
         }
         o.setTotal(total);
         o.setTotalNumber(totalNumber);
