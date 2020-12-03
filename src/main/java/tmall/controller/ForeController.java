@@ -2,6 +2,7 @@ package tmall.controller;
 
 
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.apache.commons.lang.math.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,6 +14,7 @@ import org.springframework.web.util.HtmlUtils;
 import tmall.comparator.*;
 import tmall.pojo.*;
 import tmall.service.*;
+import tmall.util.Page;
 
 import javax.servlet.http.HttpSession;
 import java.text.SimpleDateFormat;
@@ -44,6 +46,7 @@ public class ForeController {
 
     @RequestMapping("forehome")
     public String home(Model model) {
+
         List<Category> cs= categoryService.list();
         productService.fill(cs);
         productService.fillByRow(cs);
@@ -131,7 +134,8 @@ public class ForeController {
     }
 
     @RequestMapping("forecategory")
-    public String category(int cid,String sort, Model model){
+    public String category(int cid,String sort, Model model, Page page){
+
         Category c = categoryService.get(cid);
         productService.fill(c);
         productService.setSaleAndReviewNumber(c.getProducts());
@@ -157,7 +161,13 @@ public class ForeController {
                     break;
             }
         }
+        PageHelper.offsetPage(page.getStart(), page.getCount());
+        List<Product> ps= productService.list(c.getId());
+        int total = (int) new PageInfo<>(ps).getTotal();
+        page.setTotal(total);
+        page.setParam("&cid="+c.getId());
         model.addAttribute("c", c);
+        model.addAttribute("page",page);
         return "fore/category";
     }
 
@@ -330,7 +340,23 @@ public class ForeController {
         User user =(User)  session.getAttribute("user");
         List<Order> os= orderService.list(user.getId(),OrderService.delete);
         orderItemService.fill(os);
-        model.addAttribute("os", os);
+        List<Order> new_os=new ArrayList<Order>();
+
+        for(Order o:os) {
+
+            List<OrderItem> new_ois=new ArrayList<OrderItem>();
+            for(OrderItem oi: o.getOrderItems()) {
+
+                Product p = oi.getProduct();
+                List<ProductImage> productSingleImages = productImageService.list(p.getId(), ProductImageService.type_single);
+                if (!productSingleImages.isEmpty()) p.setFirstProductImage(productSingleImages.get(0));
+                oi.setProduct(p);
+                new_ois.add(oi);
+            }
+            o.setOrderItems(new_ois);
+            new_os.add(o);
+        }
+        model.addAttribute("os", new_os);
         return "fore/bought";
     }
 
@@ -340,6 +366,59 @@ public class ForeController {
         orderItemService.fill(o);
         model.addAttribute("o", o);
         return "fore/confirmPay";
+    }
+
+    @RequestMapping("foreorderConfirmed")
+    public String orderConfirmed(Model model,int oid){
+        Order o=orderService.get(oid);
+        o.setStatus(orderService.waitReview);
+        o.setConfirmDate(new Date());
+        orderService.update(o);
+        return "fore/orderConfirmed";
+    }
+
+    @RequestMapping("foredeleteOrder")
+    @ResponseBody
+    public String deleteOrder(Model model, int oid){
+        Order o = orderService.get(oid);
+        o.setStatus(OrderService.delete);
+        orderService.update(o);
+        return "success";
+    }
+
+    @RequestMapping("forereview")
+    public String review(Model model, int oid){
+
+        Order o= orderService.get(oid);
+        orderItemService.fill(o);
+        Product p=o.getOrderItems().get(0).getProduct();
+        List<Review> reviews=reviewService.list(p.getId());
+        productService.setSaleAndReviewNumber(p);
+        model.addAttribute("p", p);
+        model.addAttribute("o", o);
+        model.addAttribute("reviews", reviews);
+        return "fore/review";
+    }
+
+    @RequestMapping("foredoreview")
+    public String doreview(Model model, HttpSession session, @RequestParam("oid")int oid,
+                           @RequestParam("pid") int pid,String content){
+        Order o= orderService.get(oid);
+        o.setStatus(orderService.finish);
+        orderService.update(o);
+
+        Product p = productService.get(pid);
+        content = HtmlUtils.htmlEscape(content);
+
+        User user=(User)session.getAttribute("user");
+        Review review=new Review();
+        review.setContent(content);
+        review.setPid(pid);
+        review.setCreateDate(new Date());
+        review.setUid(user.getId());
+        reviewService.add(review);
+
+        return "redirect:forereview?oid="+oid+"&showonly=true";
     }
 
 

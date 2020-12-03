@@ -109,8 +109,8 @@
 
             <c:forEach items="${o.orderItems}" var="oi" varStatus="st">
                 <tr class="orderItemProductInfoPartTR" >
-                    <td class="orderItemProductInfoPartTD"><img width="80" height="80" src="img/productSingle_middle/
-                    ${oi.product.firstProductImage.id}.jpg"></td>
+                    <td class="orderItemProductInfoPartTD">
+                        <img width="80" height="80" src="img/productSingle_middle/${oi.product.firstProductImage.id}.jpg"></td>
 
                     <td class="orderItemProductInfoPartTD">
                         <div class="orderListItemProductLinkOutDiv">

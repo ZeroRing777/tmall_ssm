@@ -17,6 +17,10 @@
         <a href="registerPage">免费注册</a>
     </c:if>
 
+    <a href="admin_category_list">进入后台（测试用）</a>
+
+
+
     <span class="pull-right">
             <a href="forebought">我的订单</a>
             <a href="forecart">
